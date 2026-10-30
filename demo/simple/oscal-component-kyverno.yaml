@@ -66,9 +66,14 @@ component-definition:
                 - name: foo-label-exists
                   assert:
                     all:
-                    - check:
+                    - message: Each pod in validation-test must have label foo=bar
+                      check:
                         (length(podsvt) > `0`): true
                         ~.podsvt:
                           metadata:
                             labels:
                               foo: bar
+            output:
+              validation: labels.foo-label-exists
+              observations:
+                - labels.foo-label-exists

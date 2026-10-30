@@ -58,13 +58,29 @@ component-definition:
           opa-spec:
             rego: |
               package validate
+              import rego.v1
 
-              import future.keywords.every
+              default validate := false
+              default msg := "Not evaluated"
 
-              validate {
+              validate if {
+                check_foo_label.result
+              }
+              msg = check_foo_label.msg
+
+              check_foo_label = {"result": true, "msg": msg} if {
                 count(input.podsvt) > 0
                 every pod in input.podsvt {
-                  podLabel := pod.metadata.labels.foo
-                  podLabel == "bar"
+                  pod.metadata.labels.foo == "bar"
                 }
+                msg := "All pods in validation-test have label foo=bar."
+              } else = {"result": false, "msg": msg} if {
+                count(input.podsvt) == 0
+                msg := "No pods found in validation-test namespace."
+              } else = {"result": false, "msg": msg} if {
+                msg := "One or more pods are missing the required label foo=bar."
               }
+            output:
+              validation: validate.validate
+              observations:
+                - validate.msg
